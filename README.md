@@ -2,22 +2,39 @@
 
 
 Legal Analyzer est une application basée sur FastAPI (backend) et HTML/JavaScript (frontend) permettant d’analyser automatiquement des contrats juridiques.
+
 Elle utilise le NLP (traitement automatique du langage) pour :
+
 Extraire les clauses importantes (Durée, Prix, Confidentialité, Juridiction, etc.)
+
 Identifier les entités nommées (dates, montants, noms d’entreprises, personnes)
+
 Générer un résumé automatique du contrat
+
 Détecter les risques juridiques grâce à un système de règles (ex : clauses déséquilibrées, pénalités excessives, confidentialité perpétuelle, responsabilité illimitée, etc.)
+
 🚀 Fonctionnalités principales
+
 📂 Upload de documents (TXT, PDF avec OCR automatique si besoin)
+
 🔍 Analyse automatique des clauses
+
 🧠 Résumé automatique (via modèle NLP ou fallback TextRank)
+
 🛑 Détection des risques via un fichier de règles rules.yaml
+
 📊 Visualisation claire des clauses, entités et risques détectés via une interface web simple
+
 🛠️ Technologies utilisées
+
 Backend : FastAPI, Uvicorn, SQLAlchemy
+
 NLP : spaCy, Transformers (HuggingFace), regex avancées
+
 Frontend : HTML5, CSS3, JavaScript (fetch API)
+
 Base de données : MySQL (ou SQLite en mode dev)
+
 📂 Structure du projet
 legal-analyzer/
 │── backend/
