@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Legal Analyzer • Front</title>
+  <style>
+    :root {
+      --primary:#0a3a83; --muted:#6b7280; --border:#e5e7eb; --bg:#f8fafc;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Arial; margin: 24px; max-width: 1100px; }
+    h1 { color: var(--primary); margin-bottom: 8px; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+    @media (min-width: 980px){ .grid-2 { grid-template-columns: 1fr 1fr; } }
+    .card { border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: white; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    label { font-weight: 600; }
+    input[type="text"], input[type="file"] {
+      padding: 8px; border:1px solid var(--border); border-radius:8px;
+    }
+    .btn { padding: 8px 12px; border: none; background: var(--primary); color: #fff;
+           border-radius: 8px; cursor: pointer; }
+    .btn.secondary { background: #111827; }
+    .btn.warn { background: #9a3412; }
+    .btn:hover { filter: brightness(1.05); }
+    .muted { color: var(--muted); font-size: 12px; }
+    .ok { color: #059669; }
+    .err { color: #dc2626; white-space: pre-wrap; }
+    pre, code { background: var(--bg); padding: 8px; border-radius: 8px; overflow: auto; }
+    details { margin-top: 8px; }
+    table { width:100%; border-collapse: collapse; }
+    th, td { border-bottom:1px solid var(--border); text-align:left; padding:6px 4px; vertical-align: top; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; background: var(--bg); border:1px solid var(--border); }
+  </style>
+</head>
+<body>
+  <header class="card">
+    <h1>📑 Legal Analyzer</h1>
+    <div class="row" role="group" aria-label="Configuration API">
+      <label for="apiBase">API_BASE :</label>
+      <input id="apiBase" type="text" value="http://127.0.0.1:8000" aria-label="URL de base de l'API FastAPI" />
+      <button class="btn" id="pingBtn">Tester API</button>
+      <span id="pingStatus" class="muted" aria-live="polite"></span>
+    </div>
+  </header>
+
+  <main class="grid grid-2">
+    <!-- Upload -->
+    <section class="card" aria-labelledby="uploadTitle">
+      <h2 id="uploadTitle">Uploader un document</h2>
+      <div class="row">
+        <label for="fileInput">Choisir un fichier :</label>
+        <input type="file" id="fileInput" name="file" aria-label="Sélectionner un fichier à analyser" />
+        <button class="btn" id="uploadBtn">Uploader</button>
+      </div>
+      <div id="uploadMsg" class="muted" aria-live="polite"></div>
+    </section>
+
+    <!-- Reindex -->
+    <section class="card" aria-labelledby="reindexTitle">
+      <h2 id="reindexTitle">Réindexer</h2>
+      <p class="muted">Reconstruit l’index de recherche à partir des clauses en base.</p>
+      <button class="btn warn" id="reindexBtn">Reindex</button>
+      <div id="reindexMsg" class="muted" aria-live="polite"></div>
+    </section>
+
+    <!-- Liste des documents -->
+    <section class="card" aria-labelledby="docsTitle">
+      <h2 id="docsTitle">Documents</h2>
+      <div class="row">
+        <button class="btn secondary" id="loadDocsBtn">Charger</button>
+        <label for="docIdInput">Voir le document ID :</label>
+        <input type="text" id="docIdInput" placeholder="ex: 1" aria-label="Identifiant du document à consulter" />
+        <button class="btn" id="getDocBtn">Afficher</button>
+      </div>
+      <div id="docList"></div>
+    </section>
+
+    <!-- Recherche -->
+    <section class="card" aria-labelledby="searchTitle">
+      <h2 id="searchTitle">Recherche</h2>
+      <div class="row">
+        <label for="searchInput">Mot-clé :</label>
+        <input type="text" id="searchInput" placeholder="Entrez un mot-clé..." aria-label="Rechercher dans les clauses" />
+        <button class="btn" id="searchBtn">Chercher</button>
+      </div>
+      <div id="searchResults"></div>
+    </section>
+
+    <!-- Détails du document sélectionné -->
+    <section class="card" aria-labelledby="detailTitle" style="grid-column: 1 / -1;">
+      <h2 id="detailTitle">Détails du document</h2>
+      <div id="docDetail" class="muted">Sélectionnez un document pour afficher les détails.</div>
+    </section>
+  </main>
+
+  <script>
+    // ---------- Helpers ----------
+    const $ = (id) => document.getElementById(id);
+    const API = () => $("apiBase").value.trim();
+    function card(html) { const d=document.createElement("div"); d.className="card"; d.innerHTML=html; return d; }
+    function setStatus(el, msg, ok=false, err=false){
+      el.className = err ? "err" : ok ? "ok" : "muted";
+      el.textContent = msg;
+    }
+    async function jsonOrText(res){
+      const ct = res.headers.get("content-type") || "";
+      const txt = await res.text();
+      try { return ct.includes("application/json") ? JSON.parse(txt) : txt; }
+      catch { return txt; }
+    }
+
+    // ---------- Ping ----------
+    $("pingBtn").addEventListener("click", async () => {
+      try {
+        const res = await fetch(`${API()}/documents`);
+        setStatus($("pingStatus"), `OK ${res.status} → ${API()}`, true);
+      } catch (e) {
+        setStatus($("pingStatus"), `Échec de connexion: ${e}`, false, true);
+      }
+    });
+
+    // ---------- Upload ----------
+    $("uploadBtn").addEventListener("click", async () => {
+      const file = $("fileInput").files[0];
+      if (!file) { alert("Sélectionnez un fichier"); return; }
+      setStatus($("uploadMsg"), "Upload en cours…");
+      const form = new FormData();
+      form.append("file", file);
+      try {
+        const res = await fetch(`${API()}/upload`, { method: "POST", body: form });
+        const data = await jsonOrText(res);
+        if (!res.ok) { setStatus($("uploadMsg"), `Erreur ${res.status} : ${data}`, false, true); return; }
+        setStatus($("uploadMsg"), `OK : ${data.filename} (id ${data.id})`, true);
+        // auto-refresh liste
+        await loadDocs();
+      } catch (e) {
+        setStatus($("uploadMsg"), String(e), false, true);
+      }
+    });
+
+    // ---------- Reindex ----------
+    $("reindexBtn").addEventListener("click", async () => {
+      setStatus($("reindexMsg"), "Réindexation…");
+      try {
+        const res = await fetch(`${API()}/reindex`, { method: "POST" });
+        const data = await jsonOrText(res);
+        if (!res.ok) { setStatus($("reindexMsg"), `Erreur ${res.status} : ${data}`, false, true); return; }
+        setStatus($("reindexMsg"), "Index reconstruit ✅", true);
+      } catch (e) {
+        setStatus($("reindexMsg"), String(e), false, true);
+      }
+    });
+
+    // ---------- Liste docs ----------
+    $("loadDocsBtn").addEventListener("click", loadDocs);
+    async function loadDocs(){
+      const container = $("docList");
+      container.innerHTML = "";
+      try {
+        const res = await fetch(`${API()}/documents`);
+        const data = await jsonOrText(res);
+        if (!res.ok) { container.appendChild(card(`<div class="err">Erreur ${res.status}<br>${data}</div>`)); return; }
+        if (!data.length) { container.appendChild(card("Aucun document.")); return; }
+        // table
+        const rows = data.map(d => `
+          <tr>
+            <td><span class="pill">#${d.id}</span></td>
+            <td><strong>${d.filename}</strong><br><span class="muted">${d.language || "?"}</span></td>
+            <td>${(d.summary || "—").toString().slice(0,160)}</td>
+            <td><button class="btn" onclick="showDoc(${d.id})" aria-label="Voir le document ${d.id}">Voir</button></td>
+          </tr>`).join("");
+        container.innerHTML = `
+          <table aria-label="Liste des documents">
+            <thead><tr><th>ID</th><th>Fichier</th><th>Résumé</th><th>Action</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>`;
+      } catch (e) {
+        container.appendChild(card(`<div class="err">${e}</div>`));
+      }
+    }
+
+    // ---------- Voir doc par ID ----------
+    $("getDocBtn").addEventListener("click", () => {
+      const v = $("docIdInput").value.trim();
+      if (!v) return;
+      showDoc(v);
+    });
+
+    async function showDoc(id){
+      const detail = $("docDetail");
+      detail.innerHTML = `<span class="muted">Chargement du document #${id}…</span>`;
+      try {
+        const res = await fetch(`${API()}/documents/${id}`);
+        const d = await jsonOrText(res);
+        if (!res.ok) { detail.innerHTML = `<div class="err">Erreur ${res.status}<br>${d}</div>`; return; }
+
+        // clauses
+        const listClauses = (d.clauses || []).map(c => `
+          <details>
+            <summary><strong>${c.title || "Clause"}</strong> <span class="muted">(#${c.id ?? "?"})</span></summary>
+            <div style="margin-top:6px;">
+              <div class="muted">Index: ${c.order_index ?? "—"}</div>
+              <div><em>Résumé clause :</em></div>
+              <pre>${(c.summary || "—").toString()}</pre>
+              <div><em>Texte :</em></div>
+              <pre>${(c.text || "—").toString()}</pre>
+            </div>
+          </details>
+        `).join("");
+
+        // entités
+        const listEnts = (d.entities || []).map(e =>
+          `<tr><td>${e.label}</td><td>${e.text}</td><td class="muted">${e.start ?? ""}–${e.end ?? ""}</td></tr>`
+        ).join("") || `<tr><td colspan="3" class="muted">Aucune</td></tr>`;
+
+        // risques
+        const listRisks = (d.risks || []).map(r =>
+          `<tr><td>${r.code}</td><td>${r.level}</td><td>${r.message}</td></tr>`
+        ).join("") || `<tr><td colspan="3" class="muted">Aucun</td></tr>`;
+
+        detail.innerHTML = `
+          <div class="row">
+            <div><span class="pill">#${d.id}</span></div>
+            <div><strong>${d.filename}</strong></div>
+            <div class="muted">${d.language || "?"}</div>
+          </div>
+          <h3>Résumé</h3>
+          <pre>${(d.summary || "—").toString()}</pre>
+
+          <h3>Clauses (${d.clauses?.length || 0})</h3>
+          <div>${listClauses || '<div class="muted">Aucune clause</div>'}</div>
+
+          <h3>Entités (${d.entities?.length || 0})</h3>
+          <table aria-label="Entités">
+            <thead><tr><th>Label</th><th>Texte</th><th>Offsets</th></tr></thead>
+            <tbody>${listEnts}</tbody>
+          </table>
+
+          <h3>Risques (${d.risks?.length || 0})</h3>
+          <table aria-label="Risques">
+            <thead><tr><th>Code</th><th>Niveau</th><th>Message</th></tr></thead>
+            <tbody>${listRisks}</tbody>
+          </table>
+        `;
+        // focus pour accessibilité
+        detail.scrollIntoView({ behavior: "smooth", block: "start" });
+      } catch (e) {
+        detail.innerHTML = `<div class="err">${e}</div>`;
+      }
+    }
+
+    // ---------- Recherche ----------
+    $("searchBtn").addEventListener("click", doSearch);
+    async function doSearch(){
+      const q = $("searchInput").value.trim();
+      const box = $("searchResults");
+      box.innerHTML = "";
+      if (!q) { box.innerHTML = `<span class="muted">Entrez un mot-clé.</span>`; return; }
+      try {
+        const res = await fetch(`${API()}/search?q=${encodeURIComponent(q)}`);
+        const hits = await jsonOrText(res);
+        if (!res.ok) { box.appendChild(card(`<div class="err">Erreur ${res.status}<br>${hits}</div>`)); return; }
+        if (!hits.length) { box.appendChild(card("Aucun résultat.")); return; }
+        hits.forEach(h => {
+          const html = `
+            <div><strong>${h.title || "Clause"}</strong> <span class="muted">score: ${h.score ?? "?"}</span></div>
+            <div class="muted">doc: ${h.document_id}, clause: ${h.clause_id}</div>
+            <pre>${(h.snippet || "").toString()}</pre>
+            <div class="row">
+              <button class="btn" onclick="showDoc(${h.document_id})">Ouvrir le document</button>
+            </div>`;
+          box.appendChild(card(html));
+        });
+      } catch (e) {
+        box.appendChild(card(`<div class="err">${e}</div>`));
+      }
+    }
+
+    // Auto-ping à l’ouverture
+    window.addEventListener("load", () => $("pingBtn").click());
+  </script>
+</body>
+</html>

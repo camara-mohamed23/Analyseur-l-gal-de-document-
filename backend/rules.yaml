@@ -1,0 +1,20 @@
+must_have:
+  confidentialité:
+    - "confidentiel"
+    - "confidentialité"
+  durée:
+    - "durée"
+    - "terme"
+  juridiction:
+    - "loi applicable"
+    - "juridiction"
+    - "tribunal"
+
+red_flags:
+  responsabilité_illimitée:
+    - "responsabilité illimitée"
+  pénalités_fortes:
+    - "pénalité"
+    - "pénalités"
+  cession_sans_consentement:
+    - "cession sans consentement"

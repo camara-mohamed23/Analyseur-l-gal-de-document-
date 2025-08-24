@@ -1,0 +1,51 @@
+CONTRAT DE PRESTATION DE SERVICES
+Préambule
+Le présent contrat est conclu entre :
+La société ABC SARL, immatriculée au RCS de Paris, dont le siège social est situé 10 rue de la République, 75001 Paris, représentée par son gérant, ci-après désignée “le Prestataire”,
+ET
+Monsieur Jean Dupont, demeurant au 20 avenue Victor Hugo, 75016 Paris, ci-après désigné “le Client”.
+Ensemble désignés “les Parties”.
+Article 1 – Objet
+Le Prestataire s’engage à fournir des services de développement informatique au Client, conformément aux termes du présent contrat.
+Article 2 – Durée
+Le présent contrat est conclu pour une durée indéterminée.
+Le Client ne dispose pas de droit de résiliation anticipée.
+(⚠️ risque : absence de clause de résiliation équilibrée)
+Article 3 – Confidentialité
+Les Parties conviennent de garder confidentielles toutes les informations échangées.
+Cette obligation est perpétuelle, sans limite de durée.
+(⚠️ risque : confidentialité perpétuelle)
+Article 4 – Prix et Paiement
+Le prix total de la prestation est fixé à 15 000 euros (quinze mille euros).
+Le paiement sera effectué en trois versements :
+5 000 euros à la signature,
+5 000 euros à mi-parcours,
+5 000 euros à la livraison finale.
+En cas de retard de paiement, des pénalités de 500 euros par jour de retard s’appliquent automatiquement.
+(⚠️ risque : pénalités excessives)
+Article 5 – Responsabilité
+Le Prestataire assume une responsabilité illimitée pour tous dommages, directs et indirects, y compris pertes financières, perte de données et manque à gagner.
+(⚠️ risque : responsabilité illimitée)
+Article 6 – Cession
+Le Prestataire pourra céder librement le contrat à tout tiers sans l’accord du Client.
+(⚠️ risque : cession sans consentement)
+Article 7 – Juridiction compétente
+Tout litige relatif à l’exécution du présent contrat sera soumis à la loi française.
+Toutefois, en cas de désaccord, le Prestataire se réserve le droit de choisir la juridiction compétente.
+(⚠️ risque : clause déséquilibrée)
+Article 8 – Divers
+Le présent contrat annule et remplace tout accord précédent entre les Parties.
+Toute modification devra être constatée par écrit et signée par les deux Parties.
+Fait à Paris, le 15 décembre 2024
+En deux exemplaires originaux.
+Le Prestataire : ABC SARL
+Le Client : Jean Dupont
+
+👉 Avec ce contrat, ton programme devrait détecter plusieurs risques :
+MISSING_RÉSILIATION
+CONFIDENTIALITÉ_PERPÉTUELLE
+PÉNALITÉS_FORTES
+RESPONSABILITÉ_ILLIMITÉE
+CESSION_SANS_CONSENTEMENT
+CLAUSE_DÉSÉQUILIBRÉE
+
