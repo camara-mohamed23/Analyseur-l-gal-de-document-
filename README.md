@@ -1,4 +1,6 @@
-📑 Legal Analyzer
+📑 Lanalyseur legal
+
+
 Legal Analyzer est une application basée sur FastAPI (backend) et HTML/JavaScript (frontend) permettant d’analyser automatiquement des contrats juridiques.
 Elle utilise le NLP (traitement automatique du langage) pour :
 Extraire les clauses importantes (Durée, Prix, Confidentialité, Juridiction, etc.)
